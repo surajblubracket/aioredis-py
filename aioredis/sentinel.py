@@ -217,11 +217,13 @@ class Sentinel:
         Returns a pair (address, port) or raises MasterNotFoundError if no
         master is found.
         """
+        if len(self.sentinels) == 0:
+            raise MasterNotFoundError("No sentinels found")
         for sentinel_no, sentinel in enumerate(self.sentinels):
             try:
                 masters = await sentinel.sentinel_masters()
-            except (ConnectionError, TimeoutError):
-                continue
+            except (ConnectionError, TimeoutError) as e:
+                raise MasterNotFoundError(f"Connection or timeout error {e}")
             state = masters.get(service_name)
             if state and self.check_master_state(state, service_name):
                 # Put this sentinel at the top of the list
